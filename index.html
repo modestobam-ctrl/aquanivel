@@ -1,0 +1,572 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#EEF3F7">
+<title>AquaNível</title>
+<style>
+:root{
+  --bg:#EEF3F7;--card:#fff;--ink:#12212F;--sub:#5D6B78;--line:#DCE4EB;
+  --water:#2A8FD6;--water-d:#1769A8;--ok:#2E9E6A;--warn:#E39B2D;--danger:#D64545;--off:#9AA7B3;
+  --soft:#F4F7FA;--pre:#C8611B;--prod:#7A55C7;--alvo:#2E9E6A;color-scheme:light}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--ink);font:15px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  display:flex;flex-direction:column}
+header{display:flex;align-items:center;justify-content:space-between;
+  padding:calc(12px + env(safe-area-inset-top)) max(18px,env(safe-area-inset-right)) 10px max(18px,env(safe-area-inset-left))}
+h1{margin:0;font-size:24px;font-weight:800;letter-spacing:-.3px}
+.sub{font-size:12px;color:var(--sub);margin-top:2px}
+.pill{display:flex;align-items:center;gap:6px;padding:6px 11px;border-radius:20px;font-size:12px;font-weight:700}
+.pill i{width:8px;height:8px;border-radius:50%;display:block}
+.on{background:#DDF3E8;color:var(--ok)}.on i{background:var(--ok)}
+.offl{background:#FBE3E3;color:var(--danger)}.offl i{background:var(--danger)}
+#banner{margin:0 16px 6px;padding:12px 14px;border-radius:12px;background:var(--danger);color:#fff;
+  display:flex;align-items:center;gap:10px;font-weight:700;font-size:14px;animation:pulse 1s infinite alternate}
+#banner span{flex:1}
+#alist{width:100%}
+#banner button{background:#fff;color:var(--danger);border:0;border-radius:9px;padding:8px 12px;font-weight:800;font-size:13px}
+@keyframes pulse{from{box-shadow:0 0 0 0 rgba(214,69,69,.5)}to{box-shadow:0 0 0 8px rgba(214,69,69,0)}}
+@media (prefers-reduced-motion:reduce){#banner{animation:none}}
+main{flex:1;overflow-y:auto;padding:14px max(16px,env(safe-area-inset-right)) 24px max(16px,env(safe-area-inset-left))}
+.wrap{max-width:520px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
+.card{background:var(--card);border-radius:16px;padding:16px;box-shadow:0 3px 10px rgba(11,39,64,.06)}
+.st{font-size:12px;font-weight:700;color:var(--sub);letter-spacing:.6px;text-transform:uppercase;margin:0 0 12px}
+.h2{font-size:20px;font-weight:800;margin:0 0 4px}
+.p{font-size:13px;color:var(--sub);margin:0}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px 12px}
+.k{font-size:12px;color:var(--sub)}.v{font-size:20px;font-weight:700;font-variant-numeric:tabular-nums}
+
+/* Tanque */
+.tankrow{display:flex;justify-content:center;gap:14px;align-items:stretch}
+.tank{position:relative;width:170px;height:250px;border:3px solid #B9C7D3;border-radius:18px;overflow:hidden;background:#F7FAFC}
+.ovz{position:absolute;left:0;right:0;top:0;height:15%;background:repeating-linear-gradient(-45deg,rgba(214,69,69,.09) 0 8px,transparent 8px 16px);
+  border-bottom:1.5px dashed var(--danger)}
+.ovz b{position:absolute;left:8px;top:6px;font-size:10.5px;color:var(--danger);letter-spacing:.5px}
+.water{position:absolute;left:0;right:0;bottom:0;height:0;background:var(--water);opacity:.85;transition:height .7s ease,background .4s}
+.mark{position:absolute;left:0;right:0;border-top:1.5px dashed #9FB2C2}
+.mark span{position:absolute;right:6px;top:-16px;font-size:11px;font-weight:700;color:var(--sub)}
+.center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none}
+.pct{font-size:46px;font-weight:800;text-shadow:0 0 8px #fff,0 0 2px #fff;font-variant-numeric:tabular-nums}
+.ml{font-size:14px;font-weight:700;color:var(--ink);text-shadow:0 0 6px #fff}
+.steps{display:flex;flex-direction:column-reverse;justify-content:space-between;padding:4px 0}
+.chip{font-size:12px;font-weight:700;padding:6px 9px;border-radius:9px;background:var(--soft);color:var(--off);border:1px solid var(--line);text-align:center;min-width:76px}
+.chip.hit{background:#E3F0FA;color:var(--water-d);border-color:#BFD9EE}
+.chip.cur{background:var(--water);color:#fff;border-color:var(--water-d)}
+.chip.ex.hit{background:var(--danger);color:#fff;border-color:#B53535}
+
+/* Controle */
+.act{display:flex;align-items:center;gap:12px;width:100%;padding:16px;border-radius:14px;background:var(--soft);
+  border:1px solid var(--line);margin-bottom:10px;text-align:left;font:inherit;color:inherit;cursor:pointer}
+.act:active{transform:scale(.98)}
+.act.lit{background:var(--water);border-color:var(--water-d);color:#fff}
+.act.lit .as{color:#E2F1FB}
+.act:disabled{opacity:.5}
+.ai{font-size:28px}.at{font-size:16px;font-weight:700}.as{font-size:12px;color:var(--sub);margin-top:2px}
+.tag{margin-left:auto;padding:5px 10px;border-radius:20px;font-size:11px;font-weight:800;background:var(--line);color:var(--sub);white-space:nowrap}
+.act.lit .tag{background:#fff;color:var(--water-d)}
+.row{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.sw{position:relative;width:52px;height:31px;flex:none}
+.sw input{opacity:0;width:0;height:0}
+.sw span{position:absolute;inset:0;background:#C9D4DD;border-radius:20px;transition:.2s}
+.sw span:before{content:"";position:absolute;width:25px;height:25px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.25)}
+.sw input:checked+span{background:var(--water)}
+.sw input:checked+span:before{transform:translateX(21px)}
+.sw input:focus-visible+span{outline:2px solid var(--water-d);outline-offset:2px}
+.btn{width:100%;padding:13px;border-radius:12px;border:1px solid var(--line);background:var(--card);color:var(--water-d);font:inherit;font-weight:700;cursor:pointer}
+.btn.pri{background:var(--water-d);color:#fff;border-color:var(--water-d)}
+button:focus-visible{outline:2px solid var(--water-d);outline-offset:2px}
+
+/* Gráfico */
+canvas{width:100%;height:190px;display:block}
+
+/* Alertas */
+.al{background:var(--card);border-radius:12px;padding:12px 14px;border-left:5px solid var(--off)}
+.al.danger{border-left-color:var(--danger)}.al.warn{border-left-color:var(--warn)}.al.ok{border-left-color:var(--ok)}.al.info{border-left-color:var(--water)}
+.al .row b{font-size:15px}.al time{font-size:11px;color:var(--sub);white-space:nowrap}
+
+/* Abas */
+nav{display:flex;background:var(--card);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom)}
+nav button{flex:1;background:none;border:0;padding:8px 0 9px;font:inherit;font-size:11px;color:var(--sub);position:relative;cursor:pointer}
+nav button .ic{display:block;font-size:20px;opacity:.5;line-height:1.3}
+nav button.sel{color:var(--water-d);font-weight:700}
+nav button.sel .ic{opacity:1}
+nav button .dot{position:absolute;top:6px;right:28%;width:9px;height:9px;border-radius:50%;background:var(--danger)}
+#banner.pre{background:var(--pre);animation:none}
+#banner.pre button{color:var(--pre)}
+.mark.pre{border-top:2px solid var(--pre);z-index:2}
+.mark.pre span{color:#fff;background:var(--pre);top:3px;font-size:11px;padding:1px 6px;border-radius:5px}
+.stp{display:flex;align-items:center;gap:10px;margin-top:6px}
+.stp button{width:42px;height:42px;border-radius:10px;border:0;background:#E6EEF4;color:var(--water-d);font:inherit;font-size:22px;font-weight:700;cursor:pointer}
+.stp b{min-width:70px;text-align:center;font-size:20px;font-variant-numeric:tabular-nums}
+.cfg{display:flex;flex-wrap:wrap;gap:18px 28px}
+[hidden]{display:none!important}
+
+.mode{font-size:11px;font-weight:800;padding:4px 10px;border-radius:20px;background:#E3F0FA;color:var(--water-d)}
+.mode.man{background:#FDF0DC;color:#A8670E}
+.flow{display:flex;gap:6px;margin-top:14px}
+.flow span{flex:1;text-align:center;font-size:11.5px;font-weight:700;padding:7px 2px;border-radius:9px;background:var(--soft);color:var(--off);border:1px solid var(--line)}
+.flow span.done{background:#E3F0FA;color:var(--water-d);border-color:#BFD9EE}
+.flow span.cur{background:var(--water-d);color:#fff;border-color:var(--water-d)}
+.band{position:absolute;left:0;right:0;background:rgba(46,158,106,.18);pointer-events:none}
+.mark.alvo{border-top:2px solid var(--alvo);z-index:2}
+.mark.alvo span{color:#fff;background:var(--alvo);top:3px;font-size:11px;padding:1px 6px;border-radius:5px}
+.outs{display:flex;flex-direction:column;gap:8px;justify-content:center;min-width:112px}
+.out{display:grid;grid-template-columns:22px 1fr;column-gap:6px;align-items:center;padding:8px 10px;border-radius:11px;background:var(--soft);border:1px solid var(--line)}
+.out b{grid-row:span 2;font-size:17px;text-align:center}
+.out span{font-size:12px;font-weight:700}
+.out i{font-style:normal;font-size:11px;color:var(--sub)}
+.out.lit{background:#E3F0FA;border-color:#BFD9EE}
+.out.lit i{color:var(--water-d);font-weight:700}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.btn:disabled{opacity:.45}
+</style>
+</head>
+<body>
+<header>
+  <div><h1>AquaNível</h1><div class="sub" id="sub">ESP32 · copo de 500 mL</div></div>
+  <div class="pill offl" id="pill"><i></i><span id="pillt">Offline</span></div>
+</header>
+<div id="banner" hidden><span id="bannerT">⚠️ EXTRAVASÃO — nível a partir de 85%</span><button id="mute">Silenciar</button></div>
+
+<main><div class="wrap">
+
+<!-- Sem conexão -->
+<section id="wait" class="card">
+  <p class="h2" id="w1">Conectando ao ESP32…</p>
+  <p class="p" id="w2">Confira se o celular está na rede Wi-Fi <b>AquaNivel</b> (senha 12345678).</p>
+  <button class="btn pri" id="wbtn" hidden style="margin-top:14px">Conectar por Bluetooth</button>
+</section>
+
+<!-- PAINEL -->
+<section id="t-painel" class="tab" hidden>
+ <div class="wrap">
+  <div class="card">
+    <div class="row" style="margin-bottom:10px"><p class="st" style="margin:0">Etapa do ciclo</p><span class="mode" id="modeTag">Manual</span></div>
+    <p class="h2" id="etT">–</p>
+    <p class="p" id="etD"></p>
+    <div class="flow" id="flow">
+      <span data-e="enchendo">Encher</span><span data-e="ajustando">Ajustar</span><span data-e="estavel">Estabilizar</span><span data-e="produto">Produto</span>
+    </div>
+    <p class="p" id="ciclosT" style="margin-top:10px"></p>
+  </div>
+  <div class="card">
+    <p class="st">Nível do reservatório</p>
+    <div class="tankrow">
+      <div class="tank">
+        <div class="water" id="water"></div>
+        <div class="band" id="band"></div>
+        <div class="ovz"><b>EXTRAVASÃO</b></div>
+        <div class="mark" style="bottom:85%;border:0"><span style="color:var(--danger)">85%</span></div>
+        <div class="mark" style="bottom:60%"><span id="m60">60%</span></div>
+        <div class="mark" style="bottom:40%"><span id="m40">40%</span></div>
+        <div class="mark" style="bottom:20%"><span id="m20">20%</span></div>
+        <div class="mark alvo" id="malvo"><span id="malvoT">Alvo</span></div>
+        <div class="center"><div class="pct" id="pct">–</div><div class="ml" id="ml"></div></div>
+      </div>
+      <div class="outs">
+        <div class="out" id="oB"><b>⚡</b><span>Bomba</span><i id="oBt">–</i></div>
+        <div class="out" id="oR"><b>♻️</b><span>Reuso</span><i id="oRt">–</i></div>
+        <div class="out" id="oP"><b>🧴</b><span>Produto</span><i id="oPt">–</i></div>
+        <div class="out" id="oZ"><b>🔊</b><span>Buzzer</span><i id="oZt">–</i></div>
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <p class="st">Leituras</p>
+    <div class="grid">
+      <div><div class="k">Volume</div><div class="v" id="vol">–</div></div>
+      <div><div class="k">Alvo</div><div class="v" id="alvoV">–</div></div>
+      <div><div class="k">Distância do sensor</div><div class="v" id="dist">–</div></div>
+      <div><div class="k">Capacidade</div><div class="v" id="cap">–</div></div>
+    </div>
+  </div>
+  <div class="card">
+    <p class="st">Previsão</p>
+    <p class="h2" id="pv1">Calculando tendência…</p>
+    <p class="p" id="pv2">São necessários alguns segundos de leitura.</p>
+  </div>
+ </div>
+</section>
+
+<!-- CONTROLE -->
+<section id="t-controle" class="tab" hidden>
+ <div class="wrap">
+  <div class="card">
+    <div class="row">
+      <div><div class="at">Modo remoto</div>
+      <p class="p">O app comanda: "Iniciar ciclo" faz o ESP32 encher, ajustar, estabilizar e soltar o produto sozinho. Os acionamentos abaixo só funcionam com o ciclo parado. Os interruptores ficam travados. Desligado = modo manual (interruptores).</p></div>
+      <label class="sw"><input type="checkbox" id="remoto"><span></span></label>
+    </div>
+  </div>
+  <div class="card">
+    <p class="st">Ciclo</p>
+    <div class="cfg">
+      <div><div class="k">Alvo (nível correto)</div>
+        <div class="stp"><button id="alvoM" aria-label="Diminuir alvo">−</button><b id="alvoE">20%</b><button id="alvoP" aria-label="Aumentar alvo">+</button></div>
+        <div class="k" id="alvoML" style="margin-top:4px"></div></div>
+      <div><div class="k">Tempo no alvo antes do produto</div>
+        <div class="stp"><button id="temM" aria-label="Diminuir tempo">−</button><b id="temE">30 s</b><button id="temP" aria-label="Aumentar tempo">+</button></div></div>
+    </div>
+    <button class="btn pri" id="cfgSend" hidden style="margin-top:16px">Enviar ao ESP32</button>
+    <div class="row" style="margin-top:18px">
+      <div><div class="at">Reabastecer automático</div>
+      <p class="p">Ligado: depois de soltar o produto, a bomba enche de novo e o ciclo se repete. Desligado: espera "Iniciar ciclo".</p></div>
+      <label class="sw"><input type="checkbox" id="reab"><span></span></label>
+    </div>
+    <div class="two" style="margin-top:16px">
+      <button class="btn pri" id="cStart">▶ Iniciar ciclo</button>
+      <button class="btn" id="cStop">■ Parar ciclo</button>
+    </div>
+  </div>
+  <div class="card">
+    <p class="st">Acionamentos</p>
+    <button class="act" id="bB"><span class="ai">⚡</span><span><div class="at">Bomba de aquário</div><div class="as" id="bBs">Relé IN3 · D32</div></span><span class="tag" id="bBt">DESLIGADA</span></button>
+    <button class="act" id="bR"><span class="ai">♻️</span><span><div class="at">Válvula de reuso</div><div class="as" id="bRs">Relé IN1 · D27</div></span><span class="tag" id="bRt">FECHADA</span></button>
+    <button class="act" id="bP"><span class="ai">🧴</span><span><div class="at">Válvula do produto</div><div class="as" id="bPs">Relé IN2 · D33</div></span><span class="tag" id="bPt">FECHADA</span></button>
+    <button class="act" id="bZ"><span class="ai">🔊</span><span><div class="at">Buzzer</div><div class="as" id="bZs">Toque para testar</div></span><span class="tag" id="bZt">QUIETO</span></button>
+  </div>
+  <div class="card">
+    <p class="st">Som</p>
+    <div class="row">
+      <div><div class="at">Buzzer do ESP32</div>
+      <p class="p">Desligado: o buzzer não toca nenhum alarme (passou do limite e extravasão), até você ligar de novo. O teste do botão Buzzer continua funcionando. Fica gravado no ESP32.</p></div>
+      <label class="sw"><input type="checkbox" id="bzOn"><span></span></label>
+    </div>
+    <div class="row" style="margin-top:14px">
+      <div><div class="at">Buzina do celular</div>
+      <p class="p">Desligada: o celular não toca nem vibra junto com o buzzer.</p></div>
+      <label class="sw"><input type="checkbox" id="hornOn"><span></span></label>
+    </div>
+  </div>
+ </div>
+</section>
+
+<!-- HISTÓRICO -->
+<section id="t-historico" class="tab" hidden>
+ <div class="wrap">
+  <div class="card">
+    <p class="st">Nível nos últimos 5 minutos</p>
+    <canvas id="cv"></canvas>
+  </div>
+  <div class="card">
+    <p class="st" id="hn">Estatísticas</p>
+    <div class="grid">
+      <div><div class="k">Mínimo</div><div class="v" id="hmin">–</div></div>
+      <div><div class="k">Máximo</div><div class="v" id="hmax">–</div></div>
+      <div><div class="k">Média</div><div class="v" id="hmed">–</div></div>
+      <div><div class="k">Vazão atual</div><div class="v" id="hrate">–</div></div>
+    </div>
+  </div>
+  <button class="btn" id="hclr">Limpar histórico</button>
+ </div>
+</section>
+
+<!-- ALERTAS -->
+<section id="t-alertas" class="tab" hidden>
+ <div class="wrap">
+  <button class="btn pri" id="som">🔕 Desligar buzina do celular</button>
+  <p class="p" style="margin:-4px 2px 4px">Com a buzina ligada, o celular toca junto com o buzzer do ESP32 (alarme e teste) e vibra no Android. Deixe o app aberto na tela; se o celular acabou de abrir o app, toque uma vez na tela para liberar o som.</p>
+  <div id="alist" class="wrap"></div>
+  <div class="card" id="aempty"><p class="h2" style="font-size:16px">Nenhum alerta</p>
+    <p class="p">Cada etapa do ciclo, a abertura das válvulas, a extravasão e a conexão aparecem aqui com o horário.</p></div>
+  <button class="btn" id="aclr">Limpar alertas</button>
+ </div>
+</section>
+
+</div></main>
+
+<nav>
+  <button data-t="painel" class="sel"><span class="ic">💧</span>Painel</button>
+  <button data-t="controle"><span class="ic">🎛️</span>Controle</button>
+  <button data-t="historico"><span class="ic">📈</span>Histórico</button>
+  <button data-t="alertas"><span class="ic">🔔</span>Alertas<i class="dot" id="adot" hidden></i></button>
+</nav>
+
+<script>
+(function(){
+var $=function(id){return document.getElementById(id)};
+var st=null,fails=0,online=false,hist=[],alerts=[],prev=null,tab='painel',somOn=false,ctx=null,mutedPage=false,busy=false;
+function load(k,d){try{var v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}}
+function save(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
+hist=load('aq_hist',[]);alerts=load('aq_alerts',[]);
+try{tab=localStorage.getItem('aq_tab')||'painel'}catch(e){}
+function ml(s,p){return Math.round(s.capacidade_ml*p/100)}
+function fmtS(x){x=+x||0;if(x<60)return x+' s';var m=Math.floor(x/60),r=x%60;return m+' min'+(r?' '+r+' s':'')}
+
+/* ---------- Abas ---------- */
+var navBtns=document.querySelectorAll('nav button');
+function showTab(t){tab=t;try{localStorage.setItem('aq_tab',t)}catch(e){}
+  navBtns.forEach(function(b){b.classList.toggle('sel',b.getAttribute('data-t')===t)});
+  render();if(t==='historico')drawChart();if(t==='alertas')renderAlerts();}
+navBtns.forEach(function(b){b.onclick=function(){showTab(b.getAttribute('data-t'))}});
+
+/* ---------- Som e vibração ---------- */
+function unlock(){if(!ctx){try{ctx=new (window.AudioContext||window.webkitAudioContext)()}catch(e){}}
+  if(ctx&&ctx.state==='suspended')ctx.resume();}
+function beep(f,ms){if(!somOn||!ctx)return;try{var o=ctx.createOscillator(),g=ctx.createGain();
+  o.frequency.value=f;o.type='square';g.gain.value=.08;o.connect(g);g.connect(ctx.destination);
+  o.start();o.stop(ctx.currentTime+ms/1000)}catch(e){}}
+function vib(p){try{navigator.vibrate&&navigator.vibrate(p)}catch(e){}}
+somOn=load('aq_buzina',true);
+function somTxt(){$('som').textContent=somOn?'🔕 Desligar buzina do celular':'📯 Ligar buzina do celular';$('hornOn').checked=somOn}
+somTxt();
+$('som').onclick=function(){unlock();somOn=!somOn;save('aq_buzina',somOn);somTxt();
+  if(somOn){beep(1200,150);vib(100)}else hornGain(false)};
+
+/* ---------- Buzina: o celular toca junto com o buzzer do ESP32 ---------- */
+// Duas ondas "dente de serra" (420 Hz e 525 Hz) com filtro: som de buzina.
+// Liga e desliga no mesmo ritmo do buzzer: rápido na extravasão, lento quando passa do limite.
+var horn={o:null,g:null,ligada:false};
+function hornBuild(){if(horn.o||!ctx)return;try{
+  var g=ctx.createGain(),lp=ctx.createBiquadFilter(),o1=ctx.createOscillator(),o2=ctx.createOscillator();
+  g.gain.value=0;lp.type='lowpass';lp.frequency.value=2200;
+  o1.type=o2.type='sawtooth';o1.frequency.value=420;o2.frequency.value=525;
+  o1.connect(lp);o2.connect(lp);lp.connect(g);g.connect(ctx.destination);o1.start();o2.start();
+  horn.o=[o1,o2];horn.g=g}catch(e){}}
+function hornGain(on){if(on)hornBuild();if(!horn.g)return;
+  if(on===horn.ligada)return;horn.ligada=on;
+  try{horn.g.gain.setTargetAtTime(on?.22:0,ctx.currentTime,.012)}catch(e){}
+  if(on)vib(Math.round(hornRitmo()*0.9))}
+function hornRitmo(){return !st?600:st.extravasao?250:st.buzzer_teste?400:600}
+setInterval(function(){
+  var tocando=somOn&&online&&st&&st.buzzer;                 // st.buzzer = buzzer do ESP32 tocando
+  if(!tocando){hornGain(false);return}
+  if(ctx&&ctx.state==='suspended')ctx.resume();
+  var r=hornRitmo();hornGain((Date.now()/r|0)%2===1);
+},40);
+document.addEventListener('pointerdown',unlock,{passive:true});
+
+/* ---------- Alertas ---------- */
+function addAlert(title,msg,sev){
+  alerts.unshift({t:Date.now(),title:title,msg:msg,sev:sev});alerts=alerts.slice(0,100);save('aq_alerts',alerts);
+  if(sev==='danger'){vib([0,400,200,400]);beep(1800,300)}
+  else if(sev==='warn'){vib(200);beep(1200,120)}
+  else if(sev==='info'){beep(1000,90)}
+  if(tab==='alertas')renderAlerts();}
+function fmtT(t){return new Date(t).toLocaleTimeString('pt-BR')}
+function renderAlerts(){var h='';alerts.forEach(function(a){
+  h+='<div class="al '+a.sev+'"><div class="row"><b>'+a.title+'</b><time>'+fmtT(a.t)+'</time></div><p class="p">'+a.msg+'</p></div>'});
+  $('alist').innerHTML=h;$('aempty').hidden=alerts.length>0;$('aclr').hidden=alerts.length===0;}
+$('aclr').onclick=function(){alerts=[];save('aq_alerts',alerts);renderAlerts()};
+
+function checkEvents(s){
+  if(!prev){prev=s;return}
+  if(s.modo_remoto!==prev.modo_remoto)addAlert(s.modo_remoto?'Modo remoto':'Modo manual',s.modo_remoto?'O app comanda. Os interruptores ficam travados até desligar o Modo remoto.':'Bomba e válvulas pelos interruptores.','info');
+  if(s.bomba_bloqueada&&!prev.bomba_bloqueada)addAlert('Bomba bloqueada','Depois da extravasão, a bomba só volta a ligar com o nível em 80% ou menos por 5 s. O reuso fica aberto até lá.','warn');
+  if(!s.bomba_bloqueada&&prev.bomba_bloqueada)addAlert('Bomba liberada','O nível ficou estável em 80%. No manual, desligue e ligue o interruptor da bomba para usar.','ok');
+  if((s.int_travados||0)!==(prev.int_travados||0)&&s.int_travados)addAlert('Interruptor ligado','Desligue e ligue de novo para usar: '+['bomba','reuso','produto'].filter(function(n,i){return s.int_travados&(1<<i)}).join(', ')+'. Ele estava ligado ao entrar no manual ou na extravasão.','warn');
+  if(s.modo_remoto&&s.etapa!==prev.etapa){
+    var a=ml(s,s.alvo_pct)+' mL ('+s.alvo_pct+'%)';
+    if(s.etapa==='enchendo')addAlert('Enchendo','Bomba ligada até '+a+'.','info');
+    else if(s.etapa==='ajustando')addAlert('Ajustando o nível',s.reuso?'A água passou do alvo: válvula de reuso aberta até '+a+'.':'Corrigindo o nível até '+a+'.','warn');
+    else if(s.etapa==='estavel')addAlert('Nível no alvo',s.volume_ml+' mL. O produto sai em '+fmtS(s.tempo_s)+' se o nível continuar estável.','ok');
+    else if(s.etapa==='produto')addAlert('Soltando o produto','Válvula do produto aberta até o reservatório esvaziar.','warn');
+    else if(s.etapa==='aguardando')addAlert(prev.etapa==='produto'?'Ciclo concluído':'Ciclo parado',s.reabastecer?'Aguardando.':'Toque em "Iniciar ciclo" para encher de novo.','ok');
+    else if(s.etapa==='comando')addAlert('Comando pelo app','Bomba e válvulas seguem os botões do app. "Iniciar ciclo" começa o ciclo.','info');}
+  if(s.modo_remoto&&s.etapa==='ajustando'&&prev.etapa==='ajustando'&&s.reuso&&!prev.reuso)addAlert('Água passou do alvo','Válvula de reuso aberta até '+ml(s,s.alvo_pct)+' mL.','warn');
+  if(s.ciclos>prev.ciclos)addAlert('Ciclo '+s.ciclos+' concluído','Produto entregue. '+(s.reabastecer?'Reabastecendo automaticamente.':'Aguardando "Iniciar ciclo".'),'ok');
+  var lim=function(x){return x&&x.ciclo_rodando&&x.sensor_ok&&x.nivel_pct>x.alvo_pct+(x.tolerancia||2.5)};
+  if(lim(s)&&!lim(prev)&&!s.extravasao)addAlert('Passou do limite','Nível em '+s.nivel_pct+'%, acima do alvo de '+s.alvo_pct+'% + '+String(s.tolerancia||2.5).replace('.',',')+'%. O buzzer e a buzina do celular tocam até voltar para a faixa.','warn');
+  if(s.extravasao&&!prev.extravasao)addAlert('EXTRAVASÃO','Nível em '+s.nivel_pct+'% ('+s.volume_ml+' mL). Bomba desligada e reuso aberto.','danger');
+  if(!s.extravasao&&prev.extravasao)addAlert('Extravasão normalizada','Nível voltou para '+s.nivel_pct+'%.','ok');
+  prev=s;}
+
+/* ---------- Comunicação ----------
+   Aberto pelo ESP32 (http://192.168.4.1) -> Wi-Fi. Aberto por https (GitHub Pages) -> Bluetooth. */
+var BLE=location.protocol!=='http:'||/[?&]ble\b/.test(location.search);
+var SVC='6e400001-b5a3-f393-e0a9-e50e24dcca9e',CH_ST='6e400003-b5a3-f393-e0a9-e50e24dcca9e',CH_CMD='6e400002-b5a3-f393-e0a9-e50e24dcca9e';
+var dev=null,chSt=null,chCmd=null,fila=Promise.resolve(),bleState='idle',prevLost=false;
+function gatt(fn){var p=fila.then(fn);fila=p.catch(function(){});return p}
+function bleConnect(){
+  if(!navigator.bluetooth||bleState==='connecting'){render();return}
+  bleState='connecting';render();
+  var pick=dev?Promise.resolve(dev):navigator.bluetooth.requestDevice({filters:[{services:[SVC]}],optionalServices:[SVC]});
+  pick.then(function(d){dev=d;if(!d._ouvindo){d._ouvindo=1;d.addEventListener('gattserverdisconnected',bleLost)}return d.gatt.connect()})
+  .then(function(srv){return srv.getPrimaryService(SVC)})
+  .then(function(sv){return Promise.all([sv.getCharacteristic(CH_ST),sv.getCharacteristic(CH_CMD)])})
+  .then(function(c){chSt=c[0];chCmd=c[1];var volta=fails>=3||prevLost;prevLost=false;bleState='on';fails=0;
+    if(volta)addAlert('Bluetooth reconectado','O ESP32 voltou a responder.','ok');poll()})
+  .catch(function(e){chSt=chCmd=null;bleState=dev?'lost':'idle';render();
+    if(dev)setTimeout(bleRetry,4000);
+    else if(e&&e.name!=='NotFoundError')alert('Não foi possível conectar: '+e.message)});}
+function bleLost(){chSt=chCmd=null;if(bleState==='on'){bleState='lost';prevLost=true;setOnline(false);
+  addAlert('Bluetooth desconectado','O ESP32 continua o ciclo sozinho. Tentando reconectar…','danger');render();setTimeout(bleRetry,2000)}}
+function bleRetry(){if(bleState==='lost'&&dev)bleConnect()}
+function readStatus(){
+  if(!BLE)return fetch('/status',{cache:'no-store'}).then(function(r){return r.json()});
+  if(!chSt)return Promise.reject(new Error('sem conexão'));
+  return gatt(function(){return chSt.readValue()}).then(function(v){return JSON.parse(new TextDecoder().decode(v))});}
+function sendCmd(q){
+  if(!BLE)return fetch('/cmd?'+q,{cache:'no-store'}).then(function(r){return r.json()});
+  if(!chCmd)return Promise.reject(new Error('sem conexão'));
+  var dados=new TextEncoder().encode(q);
+  return gatt(function(){return chCmd.writeValueWithResponse?chCmd.writeValueWithResponse(dados):chCmd.writeValue(dados)})
+  .then(function(){return new Promise(function(r){setTimeout(r,250)})}).then(readStatus);}
+$('wbtn').onclick=function(){unlock();if(bleState==='lost')dev=null;bleConnect()};
+
+function setOnline(v){online=v;$('pill').className='pill '+(v?'on':'offl');$('pillt').textContent=v?'Online':'Offline';}
+function poll(){
+  if(BLE&&bleState!=='on')return;
+  readStatus().then(function(s){
+    if(!BLE&&fails>=3)addAlert('Conexão restabelecida','O ESP32 voltou a responder.','ok');
+    fails=0;setOnline(true);st=s;
+    if(s.sensor_ok){hist.push({t:Date.now(),v:s.nivel_pct});if(hist.length>600)hist=hist.slice(-600);
+      if(hist.length%10===0)save('aq_hist',hist);}
+    checkEvents(s);render();if(tab==='historico')drawChart();
+  }).catch(function(){fails++;if(fails===3){setOnline(false);addAlert('ESP32 offline',BLE?'Sem resposta pelo Bluetooth. Aproxime o celular do ESP32.':'Sem resposta. Confira a rede AquaNivel.','danger');render()}});}
+function cmds(list,after){if(busy||!st)return;busy=true;unlock();vib(30);render();
+  var p=Promise.resolve();list.forEach(function(q){p=p.then(function(){return sendCmd(q)})});
+  p.then(function(j){st=j;if(after)after(j);checkEvents(st);render()})
+  .catch(function(){alert('Sem comunicação com o ESP32')}).then(function(){busy=false;render()});}
+
+/* ---------- Controles ---------- */
+var eAlvo=null,eTem=null;
+function passoT(t,sobe){var p=t<60?5:t<300?15:60;if(!sobe&&t<=60&&t>5)p=5;else if(!sobe&&t<=300&&t>60)p=15;return p}
+$('alvoM').onclick=function(){if(!st)return;eAlvo=Math.max(10,(eAlvo==null?st.alvo_pct:eAlvo)-5);render()};
+$('alvoP').onclick=function(){if(!st)return;eAlvo=Math.min(75,(eAlvo==null?st.alvo_pct:eAlvo)+5);render()};
+$('temM').onclick=function(){if(!st)return;var t=eTem==null?st.tempo_s:eTem;eTem=Math.max(5,t-passoT(t,false));render()};
+$('temP').onclick=function(){if(!st)return;var t=eTem==null?st.tempo_s:eTem;eTem=Math.min(3600,t+passoT(t,true));render()};
+$('cfgSend').onclick=function(){if(!st)return;var a=eAlvo==null?st.alvo_pct:eAlvo,t=eTem==null?st.tempo_s:eTem;
+  cmds(['alvo='+a,'tempo='+t],function(j){eAlvo=eTem=null;
+    addAlert('Ajuste enviado','Alvo '+j.alvo_pct+'% ('+ml(j,j.alvo_pct)+' mL) · produto após '+fmtS(j.tempo_s)+' no alvo.','ok')})};
+$('reab').onchange=function(){cmds(['reabastecer='+($('reab').checked?1:0)])};
+$('bzOn').onchange=function(){cmds(['silencio='+($('bzOn').checked?0:1)])};
+$('hornOn').onchange=function(){unlock();somOn=$('hornOn').checked;save('aq_buzina',somOn);somTxt();if(somOn){beep(1200,150);vib(100)}else hornGain(false)};
+$('remoto').onchange=function(){cmds(['remoto='+($('remoto').checked?1:0)])};
+$('cStart').onclick=function(){cmds(['ciclo=1'])};
+$('cStop').onclick=function(){cmds(['ciclo=0'])};
+$('bB').onclick=function(){if(st)cmds(['bomba='+(st.bomba?0:1)])};
+$('bR').onclick=function(){if(st)cmds(['reuso='+(st.reuso?0:1)])};
+$('bP').onclick=function(){if(st)cmds(['produto='+(st.produto?0:1)])};
+$('bZ').onclick=function(){if(!st)return;
+  if(st.buzzer&&!st.buzzer_teste)cmds(['buzzer=0']);              // alarme tocando: silencia
+  else if(!st.ciclo_rodando)cmds(['testebuzzer='+(st.buzzer_teste?0:1)])};   // teste só com o ciclo parado
+$('mute').onclick=function(){mutedPage=true;cmds(['buzzer=0'])};
+
+/* ---------- Previsão ---------- */
+function predict(){var now=Date.now(),p=hist.filter(function(h){return now-h.t<=60000});
+  if(p.length<8)return null;var n=p.length,mx=0,my=0,i;
+  for(i=0;i<n;i++){mx+=(p[i].t-p[0].t)/1000;my+=p[i].v}mx/=n;my/=n;var a=0,b=0;
+  for(i=0;i<n;i++){var x=(p[i].t-p[0].t)/1000-mx;a+=x*(p[i].v-my);b+=x*x}
+  if(!b)return null;return a/b;}
+function dur(s){if(s==null||!isFinite(s))return '—';if(s<60)return Math.round(s)+' s';var m=Math.round(s/60);
+  if(m<60)return m+' min';return Math.floor(m/60)+' h '+(m%60)+' min'}
+
+/* ---------- Tela ---------- */
+var ETAPAS={
+  enchendo:['Enchendo','A bomba de aquário está ligada até chegar no alvo.'],
+  ajustando:['Ajustando o nível',''],
+  estavel:['Nível no alvo',''],
+  produto:['Soltando o produto','A válvula do produto fica aberta até o reservatório esvaziar.'],
+  aguardando:['Aguardando','Ciclo parado (modo remoto). Toque em "Iniciar ciclo" ou use os botões da aba Controle.'],
+  comando:['Comando pelo app','Ciclo parado: bomba e válvulas seguem os botões da aba Controle. "Iniciar ciclo" começa o ciclo.'],
+  manual:['Modo manual','Bomba e válvulas pelos interruptores. Ligue o Modo remoto ou toque em "Iniciar ciclo" para o app comandar.']};
+function setOut(id,on,txt){$(id).classList.toggle('lit',on);$(id+'t').textContent=txt}
+function setAct(id,on,tOn,tOff,sub){$(id).classList.toggle('lit',on);$(id+'t').textContent=busy?'...':on?tOn:tOff;$(id+'s').textContent=sub;$(id).disabled=busy}
+function render(){
+  var has=!!st;$('wait').hidden=has&&online;renderWait();
+  document.querySelectorAll('.tab').forEach(function(e){e.hidden=!(has&&e.id==='t-'+tab)});
+  if(tab==='alertas'){$('t-alertas').hidden=false;$('wait').hidden=true;}
+  var ex=has&&st.extravasao,passou=has&&st.ciclo_rodando&&st.sensor_ok&&st.nivel_pct>st.alvo_pct+(st.tolerancia||2.5),alarme=ex||passou;
+  $('banner').hidden=!alarme;$('adot').hidden=!alarme;$('banner').className=ex?'':'pre';
+  $('bannerT').textContent=(ex?'⚠️ EXTRAVASÃO — a partir de 85%. Bomba desligada, reuso aberto.':has?'⚠️ A água passou do limite: alvo '+st.alvo_pct+'% + '+String(st.tolerancia||2.5).replace('.',',')+'%'+(st.reuso?' · válvula de reuso aberta':''):'')+(alarme&&somOn&&(!ctx||ctx.state!=='running')?' · toque na tela para a buzina tocar':'');
+  if(!alarme)mutedPage=false;
+  $('mute').hidden=!alarme||!has||st.buzzer_mudo;
+  $('sub').textContent='ESP32 · '+(BLE?'Bluetooth':'Wi-Fi')+' · copo de '+(has?st.capacidade_ml:500)+' mL';
+  if(!has)return;
+  var s=st,ok=s.sensor_ok,alvo=s.alvo_pct,tol=s.tolerancia||2.5,pc=function(x){return String(x).replace('.',',')};
+  /* etapa */
+  var e=s.modo_remoto?s.etapa:'manual',info=ETAPAS[e]||[e,''];
+  var tit=info[0],desc=info[1];
+  if(e==='enchendo')tit='Enchendo até '+alvo+'%';
+  if(e==='ajustando'){desc=s.reuso?'A água passou do alvo: válvula de reuso aberta até voltar a '+alvo+'%.':s.bomba?'O nível baixou demais: bomba ligada até '+alvo+'%.':'Conferindo o nível.'}
+  if(e==='estavel'){tit='No alvo · produto em '+fmtS(Math.max(0,s.produto_em_s));desc='Se o nível continuar entre '+pc(alvo-tol)+'% e '+pc(alvo+tol)+'%, a válvula do produto abre.'}
+  $('etT').textContent=tit;$('etD').textContent=desc;
+  $('modeTag').textContent=s.modo_remoto?'Remoto':'Manual';$('modeTag').className='mode'+(s.modo_remoto?'':' man');
+  var ordem=['enchendo','ajustando','estavel','produto'],idx=ordem.indexOf(e);
+  document.querySelectorAll('#flow span').forEach(function(sp,i){sp.className=i===idx?'cur':(idx>i?'done':'')});
+  $('flow').style.opacity=s.modo_remoto&&e!=='comando'?1:.4;
+  $('ciclosT').textContent='Ciclos concluídos: '+s.ciclos+' · reabastecer automático '+(s.reabastecer?'ligado':'desligado');
+  /* tanque */
+  $('water').style.height=(ok?s.nivel_pct:0)+'%';
+  $('water').style.background=ex?'var(--danger)':passou?'var(--pre)':e==='produto'?'var(--prod)':'var(--water)';
+  $('pct').textContent=ok?s.nivel_pct+'%':'–';$('ml').textContent=ok?s.volume_ml+' mL':'Sem leitura do sensor';
+  $('malvo').style.bottom=alvo+'%';$('malvoT').textContent='Alvo '+alvo+'%';
+  $('band').style.bottom=(alvo-tol)+'%';$('band').style.height=(2*tol)+'%';
+  [20,40,60].forEach(function(f){$('m'+f).style.visibility=(Math.abs(alvo-f)<10)?'hidden':''});
+  setOut('oB',s.bomba,s.bomba?'Ligada':'Desligada');setOut('oR',s.reuso,s.reuso?'Aberta':'Fechada');
+  setOut('oP',s.produto,s.produto?'Aberta':'Fechada');setOut('oZ',s.buzzer,s.buzzer_teste?'Teste':s.buzzer?'Tocando':s.buzzer_desligado?'Desligado':s.buzzer_mudo?'Mudo':'Quieto');
+  $('vol').textContent=ok?s.volume_ml+' mL':'–';$('alvoV').textContent=alvo+'% · '+ml(s,alvo)+' mL';
+  $('dist').textContent=ok?s.distancia_cm.toFixed(1)+' cm':'–';$('cap').textContent=s.capacidade_ml+' mL';
+  /* controle */
+  $('remoto').checked=s.modo_remoto;$('reab').checked=s.reabastecer;$('bzOn').checked=!s.buzzer_desligado;$('hornOn').checked=somOn;
+  var a=eAlvo==null?alvo:eAlvo,t=eTem==null?s.tempo_s:eTem;
+  $('alvoE').textContent=a+'%';$('alvoML').textContent='= '+ml(s,a)+' mL';$('temE').textContent=fmtS(t);
+  var mudou=a!==alvo||t!==s.tempo_s;$('cfgSend').hidden=!mudou;$('cfgSend').disabled=busy;$('cfgSend').textContent=busy?'Enviando…':'Enviar ao ESP32';
+  var rodando=!!s.ciclo_rodando,livre=s.modo_remoto&&!rodando;
+  $('cStart').disabled=busy||rodando;$('cStop').disabled=busy||!s.modo_remoto||e==='aguardando';
+  var dica=!s.modo_remoto?'Manual · use os interruptores (ou ligue o Modo remoto)':rodando?'Ciclo rodando · pare o ciclo para usar':'Remoto · toque para ';
+  setAct('bB',s.bomba,'LIGADA','DESLIGADA',s.bomba_bloqueada?'Bloqueada até o nível ficar em 80% por 5 s':livre?dica+(s.bomba?'desligar':'ligar')+' · relé IN3':dica);
+  setAct('bR',s.reuso,'ABERTA','FECHADA',livre?dica+(s.reuso?'fechar':'abrir')+' · relé IN1':dica);
+  setAct('bP',s.produto,'ABERTA','FECHADA',livre?dica+(s.produto?'fechar':'abrir')+' · relé IN2':dica);
+  ['bB','bR','bP'].forEach(function(id){$(id).disabled=busy||!livre});
+  $('bZ').classList.toggle('lit',s.buzzer);$('bZt').textContent=s.buzzer_teste?'TESTE':s.buzzer?'TOCANDO':s.buzzer_mudo?'MUDO':'QUIETO';
+  $('bZs').textContent=s.buzzer_teste?'Tocando o teste · toque para parar':s.buzzer?'Alarme tocando · toque para silenciar':rodando?'Teste só com o ciclo parado':'Toque para testar (toca até 10 s)';
+  $('bZ').disabled=busy||(rodando&&!(s.buzzer&&!s.buzzer_teste));
+  if(ex&&!s.bomba){$('bBs').textContent='Bloqueada pela extravasão'}
+  /* previsão */
+  var k=predict(),mlmin=k==null?0:Math.abs(k*60*s.capacidade_ml/100);
+  if(e==='estavel'){$('pv1').textContent='Produto sai em '+fmtS(Math.max(0,s.produto_em_s));$('pv2').textContent='Se o nível continuar no alvo.'}
+  else if(k==null||Math.abs(k)<0.01){$('pv1').textContent=k==null?'Calculando tendência…':'Nível estável';$('pv2').textContent=k==null?'São necessários alguns segundos de leitura.':'Sem variação no último minuto.'}
+  else if(k>0){$('pv1').textContent=s.nivel_pct<alvo?'Chega no alvo em ~'+dur((alvo-s.nivel_pct)/k):'Subindo';$('pv2').textContent='Enchendo a '+mlmin.toFixed(0)+' mL/min.'}
+  else{var fim=e==='produto'?(s.vazio_pct||5):(s.nivel_pct>alvo?alvo:0);
+    $('pv1').textContent=e==='produto'?'Esvazia em ~'+dur((s.nivel_pct-fim)/-k):s.nivel_pct>alvo?'Volta ao alvo em ~'+dur((s.nivel_pct-alvo)/-k):'Seca em ~'+dur(s.nivel_pct/-k);
+    $('pv2').textContent='Saindo '+mlmin.toFixed(0)+' mL/min.'}
+  $('hrate').textContent=k==null?'–':(k>0?'+':'')+(k*60*s.capacidade_ml/100).toFixed(0)+' mL/min';
+}
+function renderWait(){
+  var b=$('wbtn');
+  if(!BLE){b.hidden=true;return}
+  b.hidden=false;b.disabled=bleState==='connecting';
+  if(!navigator.bluetooth){b.hidden=true;$('w1').textContent='Este navegador não tem Bluetooth';
+    $('w2').innerHTML='No <b>Android</b>, abra este endereço no <b>Chrome</b> (com Bluetooth e Localização ligados). No <b>iPhone</b>, instale o app grátis <b>Bluefy – Web BLE Browser</b> e abra este endereço nele.';return}
+  if(bleState==='connecting'){$('w1').textContent='Conectando…';$('w2').textContent='Escolha "AquaNivel" na lista que o celular mostrar.';b.textContent='Conectando…';return}
+  if(bleState==='lost'){$('w1').textContent='Bluetooth desconectado';$('w2').textContent='O ESP32 continua o ciclo sozinho. Tentando reconectar; se não voltar, aproxime o celular e toque no botão.';b.textContent='Conectar de novo';return}
+  $('w1').textContent='Conectar ao ESP32';
+  $('w2').innerHTML='Ligue o ESP32 e o Bluetooth do celular. Toque no botão e escolha <b>AquaNivel</b>. Não precisa parear nas configurações.';
+  b.textContent='Conectar por Bluetooth';}
+
+/* ---------- Gráfico ---------- */
+function drawChart(){
+  var c=$('cv'),r=c.getBoundingClientRect();if(!r.width)return;var dpr=window.devicePixelRatio||1;
+  c.width=r.width*dpr;c.height=r.height*dpr;var g=c.getContext('2d');g.scale(dpr,dpr);
+  var W=r.width,H=r.height,L=34,R=14,T=8,B=22,w=W-L-R,h=H-T-B,now=Date.now(),span=300000;
+  var y=function(v){return T+h*(1-v/100)},x=function(t){return L+w*(1-(now-t)/span)};
+  g.clearRect(0,0,W,H);g.font='11px system-ui,sans-serif';
+  g.fillStyle='rgba(214,69,69,.08)';g.fillRect(L,y(100),w,y(85)-y(100));
+  if(st){var tl=st.tolerancia||2.5;g.fillStyle='rgba(46,158,106,.14)';g.fillRect(L,y(st.alvo_pct+tl),w,y(st.alvo_pct-tl)-y(st.alvo_pct+tl));}
+  [0,20,40,60,85,100].forEach(function(v){g.strokeStyle=v===85?'#D64545':'#DCE4EB';g.setLineDash(v===85?[4,4]:[]);
+    g.beginPath();g.moveTo(L,y(v));g.lineTo(W-R,y(v));g.stroke();g.fillStyle='#5D6B78';g.textAlign='right';g.fillText(v+'%',L-6,y(v)+4)});
+  if(st){g.strokeStyle='#2E9E6A';g.setLineDash([]);g.lineWidth=1.5;g.beginPath();g.moveTo(L,y(st.alvo_pct));g.lineTo(W-R,y(st.alvo_pct));g.stroke();g.lineWidth=1;}
+  g.setLineDash([]);['-5 min','-4','-3','-2','-1','agora'].forEach(function(l,i){g.textAlign=i===5?'right':i===0?'left':'center';g.fillText(l,i===0?L-4:i===5?W-2:L+w*i/5,H-6)});
+  var p=hist.filter(function(q){return now-q.t<=span});
+  var n=p.length,mn=100,mx=0,sm=0;p.forEach(function(q){mn=Math.min(mn,q.v);mx=Math.max(mx,q.v);sm+=q.v});
+  $('hn').textContent='Estatísticas ('+n+' leituras)';
+  $('hmin').textContent=n?mn+'%':'–';$('hmax').textContent=n?mx+'%':'–';$('hmed').textContent=n?Math.round(sm/n)+'%':'–';
+  if(n<2)return;
+  g.beginPath();p.forEach(function(q,i){i?g.lineTo(x(q.t),y(q.v)):g.moveTo(x(q.t),y(q.v))});
+  g.lineTo(x(p[n-1].t),y(0));g.lineTo(x(p[0].t),y(0));g.closePath();g.fillStyle='rgba(42,143,214,.15)';g.fill();
+  g.beginPath();p.forEach(function(q,i){i?g.lineTo(x(q.t),y(q.v)):g.moveTo(x(q.t),y(q.v))});
+  g.strokeStyle='#1769A8';g.lineWidth=2;g.stroke();
+  var e=p[n-1];g.fillStyle=e.v>=85?'#D64545':'#1769A8';g.beginPath();g.arc(x(e.t),y(e.v),4,0,7);g.fill();
+}
+$('hclr').onclick=function(){hist=[];save('aq_hist',hist);drawChart()};
+window.addEventListener('resize',function(){if(tab==='historico')drawChart()});
+
+showTab(tab);poll();setInterval(poll,1000);
+})();
+</script>
+</body>
+</html>
