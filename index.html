@@ -9,7 +9,7 @@
 :root{
   --bg:#EEF3F7;--card:#fff;--ink:#12212F;--sub:#5D6B78;--line:#DCE4EB;
   --water:#2A8FD6;--water-d:#1769A8;--ok:#2E9E6A;--warn:#E39B2D;--danger:#D64545;--off:#9AA7B3;
-  --soft:#F4F7FA;--pre:#C8611B;--prod:#7A55C7;--alvo:#2E9E6A;color-scheme:light}
+  --soft:#F4F7FA;--pre:#C8611B;--prod:#7A55C7;--alvo:#2E9E6A;--r2:#E8892B;color-scheme:light}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{height:100%;margin:0}
 body{background:var(--bg);color:var(--ink);font:15px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
@@ -120,6 +120,10 @@ nav button .dot{position:absolute;top:6px;right:28%;width:9px;height:9px;border-
 .out.lit{background:#E3F0FA;border-color:#BFD9EE}
 .out.lit i{color:var(--water-d);font-weight:700}
 .two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.mark.r1{border-top:2px dashed var(--water-d)}
+.mark.r1 span{color:#fff;background:var(--water-d);top:3px;left:6px;right:auto;font-size:11px;padding:1px 6px;border-radius:5px}
+.mixbar{display:flex;height:10px;border-radius:6px;overflow:hidden;margin-top:6px;background:var(--line)}
+.mixbar i{display:block;height:100%}
 .btn:disabled{opacity:.45}
 </style>
 </head>
@@ -128,7 +132,7 @@ nav button .dot{position:absolute;top:6px;right:28%;width:9px;height:9px;border-
   <div><h1>AquaNível</h1><div class="sub" id="sub">ESP32 · copo de 500 mL</div></div>
   <div class="pill offl" id="pill"><i></i><span id="pillt">Offline</span></div>
 </header>
-<div id="banner" hidden><span id="bannerT">⚠️ EXTRAVASÃO — nível a partir de 85%</span><button id="mute">Silenciar</button></div>
+<div id="banner" hidden><span id="bannerT">⚠️ EXTRAVASÃO</span><button id="mute">Silenciar</button></div>
 
 <main><div class="wrap">
 
@@ -147,7 +151,7 @@ nav button .dot{position:absolute;top:6px;right:28%;width:9px;height:9px;border-
     <p class="h2" id="etT">–</p>
     <p class="p" id="etD"></p>
     <div class="flow" id="flow">
-      <span data-e="enchendo">Encher</span><span data-e="ajustando">Ajustar</span><span data-e="estavel">Estabilizar</span><span data-e="produto">Produto</span>
+      <span data-e="enchendo_r1">Encher R1</span><span data-e="enchendo_r2">Encher R2</span><span data-e="estavel">Misturar</span><span data-e="produto">Produto</span>
     </div>
     <p class="p" id="ciclosT" style="margin-top:10px"></p>
   </div>
@@ -157,17 +161,18 @@ nav button .dot{position:absolute;top:6px;right:28%;width:9px;height:9px;border-
       <div class="tank">
         <div class="water" id="water"></div>
         <div class="band" id="band"></div>
-        <div class="ovz"><b>EXTRAVASÃO</b></div>
-        <div class="mark" style="bottom:85%;border:0"><span style="color:var(--danger)">85%</span></div>
+        <div class="ovz" id="ovz"><b>EXTRAVASÃO</b></div>
+        <div class="mark" id="mex" style="bottom:80%;border:0"><span id="mexT" style="color:var(--danger)">80%</span></div>
         <div class="mark" style="bottom:60%"><span id="m60">60%</span></div>
         <div class="mark" style="bottom:40%"><span id="m40">40%</span></div>
         <div class="mark" style="bottom:20%"><span id="m20">20%</span></div>
         <div class="mark alvo" id="malvo"><span id="malvoT">Alvo</span></div>
+        <div class="mark r1" id="mr1" hidden><span id="mr1T">R1</span></div>
         <div class="center"><div class="pct" id="pct">–</div><div class="ml" id="ml"></div></div>
       </div>
       <div class="outs">
-        <div class="out" id="oB"><b>⚡</b><span>Bomba</span><i id="oBt">–</i></div>
-        <div class="out" id="oR"><b>♻️</b><span>Reuso</span><i id="oRt">–</i></div>
+        <div class="out" id="oB"><b>1️⃣</b><span>Reservatório 1</span><i id="oBt">–</i></div>
+        <div class="out" id="oR"><b>2️⃣</b><span>Reservatório 2</span><i id="oRt">–</i></div>
         <div class="out" id="oP"><b>🧴</b><span>Produto</span><i id="oPt">–</i></div>
         <div class="out" id="oZ"><b>🔊</b><span>Buzzer</span><i id="oZt">–</i></div>
       </div>
@@ -179,7 +184,7 @@ nav button .dot{position:absolute;top:6px;right:28%;width:9px;height:9px;border-
       <div><div class="k">Volume</div><div class="v" id="vol">–</div></div>
       <div><div class="k">Alvo</div><div class="v" id="alvoV">–</div></div>
       <div><div class="k">Distância do sensor</div><div class="v" id="dist">–</div></div>
-      <div><div class="k">Capacidade</div><div class="v" id="cap">–</div></div>
+      <div><div class="k">Mistura (R1 · R2)</div><div class="v" id="cap">–</div></div>
     </div>
   </div>
   <div class="card">
@@ -196,23 +201,27 @@ nav button .dot{position:absolute;top:6px;right:28%;width:9px;height:9px;border-
   <div class="card">
     <div class="row">
       <div><div class="at">Modo remoto</div>
-      <p class="p">O app comanda: "Iniciar ciclo" faz o ESP32 encher, ajustar, estabilizar e soltar o produto sozinho. Os acionamentos abaixo só funcionam com o ciclo parado. Os interruptores ficam travados. Desligado = modo manual (interruptores).</p></div>
+      <p class="p">O app comanda: "Iniciar ciclo" faz o ESP32 encher com o reservatório 1, completar com o reservatório 2, esperar a mistura e soltar o produto sozinho. Os acionamentos abaixo só funcionam com o ciclo parado. Os interruptores ficam travados. Desligado = modo manual (interruptores).</p></div>
       <label class="sw"><input type="checkbox" id="remoto"><span></span></label>
     </div>
   </div>
   <div class="card">
     <p class="st">Ciclo</p>
     <div class="cfg">
-      <div><div class="k">Alvo (nível correto)</div>
-        <div class="stp"><button id="alvoM" aria-label="Diminuir alvo">−</button><b id="alvoE">20%</b><button id="alvoP" aria-label="Aumentar alvo">+</button></div>
+      <div><div class="k">Alvo (quanto encher o copo)</div>
+        <div class="stp"><button id="alvoM" aria-label="Diminuir alvo">−</button><b id="alvoE">60%</b><button id="alvoP" aria-label="Aumentar alvo">+</button></div>
         <div class="k" id="alvoML" style="margin-top:4px"></div></div>
-      <div><div class="k">Tempo no alvo antes do produto</div>
+      <div><div class="k">Mistura: parte do reservatório 1</div>
+        <div class="stp"><button id="mixM" aria-label="Menos do reservatório 1">−</button><b id="mixE">50%</b><button id="mixP" aria-label="Mais do reservatório 1">+</button></div>
+        <div class="k" id="mixML" style="margin-top:4px"></div>
+        <div class="mixbar" aria-hidden="true"><i id="mixB1" style="background:var(--water)"></i><i id="mixB2" style="background:var(--r2)"></i></div></div>
+      <div><div class="k">Tempo misturando antes do produto</div>
         <div class="stp"><button id="temM" aria-label="Diminuir tempo">−</button><b id="temE">30 s</b><button id="temP" aria-label="Aumentar tempo">+</button></div></div>
     </div>
     <button class="btn pri" id="cfgSend" hidden style="margin-top:16px">Enviar ao ESP32</button>
     <div class="row" style="margin-top:18px">
       <div><div class="at">Reabastecer automático</div>
-      <p class="p">Ligado: depois de soltar o produto, a bomba enche de novo e o ciclo se repete. Desligado: espera "Iniciar ciclo".</p></div>
+      <p class="p">Ligado: depois de soltar o produto, o ciclo recomeça sozinho com a mesma mistura. Desligado: espera "Iniciar ciclo".</p></div>
       <label class="sw"><input type="checkbox" id="reab"><span></span></label>
     </div>
     <div class="two" style="margin-top:16px">
@@ -222,9 +231,9 @@ nav button .dot{position:absolute;top:6px;right:28%;width:9px;height:9px;border-
   </div>
   <div class="card">
     <p class="st">Acionamentos</p>
-    <button class="act" id="bB"><span class="ai">⚡</span><span><div class="at">Bomba de aquário</div><div class="as" id="bBs">Relé IN3 · D32</div></span><span class="tag" id="bBt">DESLIGADA</span></button>
-    <button class="act" id="bR"><span class="ai">♻️</span><span><div class="at">Válvula de reuso</div><div class="as" id="bRs">Relé IN1 · D27</div></span><span class="tag" id="bRt">FECHADA</span></button>
-    <button class="act" id="bP"><span class="ai">🧴</span><span><div class="at">Válvula do produto</div><div class="as" id="bPs">Relé IN2 · D33</div></span><span class="tag" id="bPt">FECHADA</span></button>
+    <button class="act" id="bB"><span class="ai">1️⃣</span><span><div class="at">Reservatório 1</div><div class="as" id="bBs">Relé · D33</div></span><span class="tag" id="bBt">DESLIGADA</span></button>
+    <button class="act" id="bR"><span class="ai">2️⃣</span><span><div class="at">Reservatório 2</div><div class="as" id="bRs">Relé · D27</div></span><span class="tag" id="bRt">DESLIGADA</span></button>
+    <button class="act" id="bP"><span class="ai">🧴</span><span><div class="at">Bomba do produto</div><div class="as" id="bPs">Relé · D32</div></span><span class="tag" id="bPt">DESLIGADA</span></button>
     <button class="act" id="bZ"><span class="ai">🔊</span><span><div class="at">Buzzer</div><div class="as" id="bZs">Toque para testar</div></span><span class="tag" id="bZt">QUIETO</span></button>
   </div>
   <div class="card">
@@ -270,7 +279,7 @@ nav button .dot{position:absolute;top:6px;right:28%;width:9px;height:9px;border-
   <p class="p" style="margin:-4px 2px 4px">Com a buzina ligada, o celular toca junto com o buzzer do ESP32 (alarme e teste) e vibra no Android. Deixe o app aberto na tela; se o celular acabou de abrir o app, toque uma vez na tela para liberar o som.</p>
   <div id="alist" class="wrap"></div>
   <div class="card" id="aempty"><p class="h2" style="font-size:16px">Nenhum alerta</p>
-    <p class="p">Cada etapa do ciclo, a abertura das válvulas, a extravasão e a conexão aparecem aqui com o horário.</p></div>
+    <p class="p">Cada etapa do ciclo, as bombas, a extravasão e a conexão aparecem aqui com o horário.</p></div>
   <button class="btn" id="aclr">Limpar alertas</button>
  </div>
 </section>
@@ -353,23 +362,22 @@ $('aclr').onclick=function(){alerts=[];save('aq_alerts',alerts);renderAlerts()};
 
 function checkEvents(s){
   if(!prev){prev=s;return}
-  if(s.modo_remoto!==prev.modo_remoto)addAlert(s.modo_remoto?'Modo remoto':'Modo manual',s.modo_remoto?'O app comanda. Os interruptores ficam travados até desligar o Modo remoto.':'Bomba e válvulas pelos interruptores.','info');
-  if(s.bomba_bloqueada&&!prev.bomba_bloqueada)addAlert('Bomba bloqueada','Depois da extravasão, a bomba só volta a ligar com o nível em 80% ou menos por 5 s. O reuso fica aberto até lá.','warn');
-  if(!s.bomba_bloqueada&&prev.bomba_bloqueada)addAlert('Bomba liberada','O nível ficou estável em 80%. No manual, desligue e ligue o interruptor da bomba para usar.','ok');
-  if((s.int_travados||0)!==(prev.int_travados||0)&&s.int_travados)addAlert('Interruptor ligado','Desligue e ligue de novo para usar: '+['bomba','reuso','produto'].filter(function(n,i){return s.int_travados&(1<<i)}).join(', ')+'. Ele estava ligado ao entrar no manual ou na extravasão.','warn');
+  if(s.modo_remoto!==prev.modo_remoto)addAlert(s.modo_remoto?'Modo remoto':'Modo manual',s.modo_remoto?'O app comanda. Os interruptores ficam travados até desligar o Modo remoto.':'As três bombas pelos interruptores.','info');
+  if(s.bomba_bloqueada&&!prev.bomba_bloqueada)addAlert('Reservatórios 1 e 2 bloqueados','Depois da extravasão, elas só voltam a ligar com o nível em 75% ou menos por 5 s. Esvazie pela bomba do produto.','warn');
+  if(!s.bomba_bloqueada&&prev.bomba_bloqueada)addAlert('Reservatórios 1 e 2 liberados','O nível ficou em 75% ou menos. No manual, desligue e ligue os interruptores para usar.','ok');
+  if((s.int_travados||0)!==(prev.int_travados||0)&&s.int_travados)addAlert('Interruptor ligado','Desligue e ligue de novo para usar: '+['reservatório 1','reservatório 2','produto'].filter(function(n,i){return s.int_travados&(1<<i)}).join(', ')+'. Ele estava ligado ao entrar no manual ou na extravasão.','warn');
   if(s.modo_remoto&&s.etapa!==prev.etapa){
-    var a=ml(s,s.alvo_pct)+' mL ('+s.alvo_pct+'%)';
-    if(s.etapa==='enchendo')addAlert('Enchendo','Bomba ligada até '+a+'.','info');
-    else if(s.etapa==='ajustando')addAlert('Ajustando o nível',s.reuso?'A água passou do alvo: válvula de reuso aberta até '+a+'.':'Corrigindo o nível até '+a+'.','warn');
-    else if(s.etapa==='estavel')addAlert('Nível no alvo',s.volume_ml+' mL. O produto sai em '+fmtS(s.tempo_s)+' se o nível continuar estável.','ok');
-    else if(s.etapa==='produto')addAlert('Soltando o produto','Válvula do produto aberta até o reservatório esvaziar.','warn');
+    var a=ml(s,s.alvo_pct)+' mL ('+s.alvo_pct+'%)',r1=Math.round(s.alvo_r1||0);
+    if(s.etapa==='enchendo_r1')addAlert('Enchendo com o reservatório 1','Reservatório 1 ligado até '+ml(s,r1)+' mL ('+r1+'%).','info');
+    else if(s.etapa==='enchendo_r2')addAlert('Completando com o reservatório 2','Reservatório 2 ligado até '+a+'.','info');
+    else if(s.etapa==='estavel')addAlert('Mistura pronta',s.volume_ml+' mL. O produto sai em '+fmtS(s.tempo_s)+'.','ok');
+    else if(s.etapa==='produto')addAlert('Soltando o produto','Bomba do produto ligada até o copo esvaziar.','warn');
     else if(s.etapa==='aguardando')addAlert(prev.etapa==='produto'?'Ciclo concluído':'Ciclo parado',s.reabastecer?'Aguardando.':'Toque em "Iniciar ciclo" para encher de novo.','ok');
-    else if(s.etapa==='comando')addAlert('Comando pelo app','Bomba e válvulas seguem os botões do app. "Iniciar ciclo" começa o ciclo.','info');}
-  if(s.modo_remoto&&s.etapa==='ajustando'&&prev.etapa==='ajustando'&&s.reuso&&!prev.reuso)addAlert('Água passou do alvo','Válvula de reuso aberta até '+ml(s,s.alvo_pct)+' mL.','warn');
+    else if(s.etapa==='comando')addAlert('Comando pelo app','As bombas seguem os botões do app. "Iniciar ciclo" começa o ciclo.','info');}
   if(s.ciclos>prev.ciclos)addAlert('Ciclo '+s.ciclos+' concluído','Produto entregue. '+(s.reabastecer?'Reabastecendo automaticamente.':'Aguardando "Iniciar ciclo".'),'ok');
   var lim=function(x){return x&&x.ciclo_rodando&&x.sensor_ok&&x.nivel_pct>x.alvo_pct+(x.tolerancia||2.5)};
   if(lim(s)&&!lim(prev)&&!s.extravasao)addAlert('Passou do limite','Nível em '+s.nivel_pct+'%, acima do alvo de '+s.alvo_pct+'% + '+String(s.tolerancia||2.5).replace('.',',')+'%. O buzzer e a buzina do celular tocam até voltar para a faixa.','warn');
-  if(s.extravasao&&!prev.extravasao)addAlert('EXTRAVASÃO','Nível em '+s.nivel_pct+'% ('+s.volume_ml+' mL). Bomba desligada e reuso aberto.','danger');
+  if(s.extravasao&&!prev.extravasao)addAlert('EXTRAVASÃO','Nível em '+s.nivel_pct+'% ('+s.volume_ml+' mL). Reservatórios 1 e 2 desligados'+(prev.ciclo_rodando?' e ciclo parado':'')+'.','danger');
   if(!s.extravasao&&prev.extravasao)addAlert('Extravasão normalizada','Nível voltou para '+s.nivel_pct+'%.','ok');
   prev=s;}
 
@@ -397,7 +405,9 @@ function bleRetry(){if(bleState==='lost'&&dev)bleConnect()}
 function readStatus(){
   if(!BLE)return fetch('/status',{cache:'no-store'}).then(function(r){return r.json()});
   if(!chSt)return Promise.reject(new Error('sem conexão'));
-  return gatt(function(){return chSt.readValue()}).then(function(v){return JSON.parse(new TextDecoder().decode(v))});}
+  return gatt(function(){return chSt.readValue()}).then(function(v){return normal(JSON.parse(new TextDecoder().decode(v)))});}
+// ESP32 ainda com o código antigo (bomba/reuso): o app se adapta sozinho
+function normal(j){if(j&&!('bomba1' in j)&&('bomba' in j)){j.antigo=true;j.bomba1=j.bomba;j.bomba2=j.reuso}return j}
 function sendCmd(q){
   if(!BLE)return fetch('/cmd?'+q,{cache:'no-store'}).then(function(r){return r.json()});
   if(!chCmd)return Promise.reject(new Error('sem conexão'));
@@ -422,23 +432,25 @@ function cmds(list,after){if(busy||!st)return;busy=true;unlock();vib(30);render(
   .catch(function(){alert('Sem comunicação com o ESP32')}).then(function(){busy=false;render()});}
 
 /* ---------- Controles ---------- */
-var eAlvo=null,eTem=null;
+var eAlvo=null,eTem=null,eMix=null;
 function passoT(t,sobe){var p=t<60?5:t<300?15:60;if(!sobe&&t<=60&&t>5)p=5;else if(!sobe&&t<=300&&t>60)p=15;return p}
 $('alvoM').onclick=function(){if(!st)return;eAlvo=Math.max(10,(eAlvo==null?st.alvo_pct:eAlvo)-5);render()};
 $('alvoP').onclick=function(){if(!st)return;eAlvo=Math.min(75,(eAlvo==null?st.alvo_pct:eAlvo)+5);render()};
+$('mixM').onclick=function(){if(!st)return;eMix=Math.max(0,(eMix==null?st.mistura_r1:eMix)-5);render()};
+$('mixP').onclick=function(){if(!st)return;eMix=Math.min(100,(eMix==null?st.mistura_r1:eMix)+5);render()};
 $('temM').onclick=function(){if(!st)return;var t=eTem==null?st.tempo_s:eTem;eTem=Math.max(5,t-passoT(t,false));render()};
 $('temP').onclick=function(){if(!st)return;var t=eTem==null?st.tempo_s:eTem;eTem=Math.min(3600,t+passoT(t,true));render()};
-$('cfgSend').onclick=function(){if(!st)return;var a=eAlvo==null?st.alvo_pct:eAlvo,t=eTem==null?st.tempo_s:eTem;
-  cmds(['alvo='+a,'tempo='+t],function(j){eAlvo=eTem=null;
-    addAlert('Ajuste enviado','Alvo '+j.alvo_pct+'% ('+ml(j,j.alvo_pct)+' mL) · produto após '+fmtS(j.tempo_s)+' no alvo.','ok')})};
+$('cfgSend').onclick=function(){if(!st)return;var a=eAlvo==null?st.alvo_pct:eAlvo,t=eTem==null?st.tempo_s:eTem,m=eMix==null?st.mistura_r1:eMix;
+  cmds(['alvo='+a,'mistura='+m,'tempo='+t],function(j){eAlvo=eTem=eMix=null;
+    addAlert('Ajuste enviado','Alvo '+j.alvo_pct+'% ('+ml(j,j.alvo_pct)+' mL) · mistura R1 '+j.mistura_r1+'% / R2 '+(100-j.mistura_r1)+'% · produto após '+fmtS(j.tempo_s)+' misturando.','ok')})};
 $('reab').onchange=function(){cmds(['reabastecer='+($('reab').checked?1:0)])};
 $('bzOn').onchange=function(){cmds(['silencio='+($('bzOn').checked?0:1)])};
 $('hornOn').onchange=function(){unlock();somOn=$('hornOn').checked;save('aq_buzina',somOn);somTxt();if(somOn){beep(1200,150);vib(100)}else hornGain(false)};
 $('remoto').onchange=function(){cmds(['remoto='+($('remoto').checked?1:0)])};
 $('cStart').onclick=function(){cmds(['ciclo=1'])};
 $('cStop').onclick=function(){cmds(['ciclo=0'])};
-$('bB').onclick=function(){if(st)cmds(['bomba='+(st.bomba?0:1)])};
-$('bR').onclick=function(){if(st)cmds(['reuso='+(st.reuso?0:1)])};
+$('bB').onclick=function(){if(st)cmds([(st.antigo?'bomba=':'bomba1=')+(st.bomba1?0:1)])};
+$('bR').onclick=function(){if(st)cmds([(st.antigo?'reuso=':'bomba2=')+(st.bomba2?0:1)])};
 $('bP').onclick=function(){if(st)cmds(['produto='+(st.produto?0:1)])};
 $('bZ').onclick=function(){if(!st)return;
   if(st.buzzer&&!st.buzzer_teste)cmds(['buzzer=0']);              // alarme tocando: silencia
@@ -456,13 +468,13 @@ function dur(s){if(s==null||!isFinite(s))return '—';if(s<60)return Math.round(
 
 /* ---------- Tela ---------- */
 var ETAPAS={
-  enchendo:['Enchendo','A bomba de aquário está ligada até chegar no alvo.'],
-  ajustando:['Ajustando o nível',''],
-  estavel:['Nível no alvo',''],
-  produto:['Soltando o produto','A válvula do produto fica aberta até o reservatório esvaziar.'],
+  enchendo_r1:['Enchendo com o reservatório 1',''],
+  enchendo_r2:['Completando com o reservatório 2',''],
+  estavel:['Misturando',''],
+  produto:['Soltando o produto','A bomba do produto fica ligada até o copo esvaziar.'],
   aguardando:['Aguardando','Ciclo parado (modo remoto). Toque em "Iniciar ciclo" ou use os botões da aba Controle.'],
-  comando:['Comando pelo app','Ciclo parado: bomba e válvulas seguem os botões da aba Controle. "Iniciar ciclo" começa o ciclo.'],
-  manual:['Modo manual','Bomba e válvulas pelos interruptores. Ligue o Modo remoto ou toque em "Iniciar ciclo" para o app comandar.']};
+  comando:['Comando pelo app','Ciclo parado: as bombas seguem os botões da aba Controle. "Iniciar ciclo" começa o ciclo.'],
+  manual:['Modo manual','As três bombas pelos interruptores. Ligue o Modo remoto ou toque em "Iniciar ciclo" para o app comandar.']};
 function setOut(id,on,txt){$(id).classList.toggle('lit',on);$(id+'t').textContent=txt}
 function setAct(id,on,tOn,tOff,sub){$(id).classList.toggle('lit',on);$(id+'t').textContent=busy?'...':on?tOn:tOff;$(id+'s').textContent=sub;$(id).disabled=busy}
 function render(){
@@ -471,7 +483,7 @@ function render(){
   if(tab==='alertas'){$('t-alertas').hidden=false;$('wait').hidden=true;}
   var ex=has&&st.extravasao,passou=has&&st.ciclo_rodando&&st.sensor_ok&&st.nivel_pct>st.alvo_pct+(st.tolerancia||2.5),alarme=ex||passou;
   $('banner').hidden=!alarme;$('adot').hidden=!alarme;$('banner').className=ex?'':'pre';
-  $('bannerT').textContent=(ex?'⚠️ EXTRAVASÃO — a partir de 85%. Bomba desligada, reuso aberto.':has?'⚠️ A água passou do limite: alvo '+st.alvo_pct+'% + '+String(st.tolerancia||2.5).replace('.',',')+'%'+(st.reuso?' · válvula de reuso aberta':''):'')+(alarme&&somOn&&(!ctx||ctx.state!=='running')?' · toque na tela para a buzina tocar':'');
+  $('bannerT').textContent=(ex?'⚠️ EXTRAVASÃO — a partir de '+(st.extravasao_pct||80)+'%. Reservatórios 1 e 2 desligados: esvazie pelo produto.':has?'⚠️ A água passou do limite: alvo '+st.alvo_pct+'% + '+String(st.tolerancia||2.5).replace('.',',')+'%':'')+(alarme&&somOn&&(!ctx||ctx.state!=='running')?' · toque na tela para a buzina tocar':'');
   if(!alarme)mutedPage=false;
   $('mute').hidden=!alarme||!has||st.buzzer_mudo;
   $('sub').textContent='ESP32 · '+(BLE?'Bluetooth':'Wi-Fi')+' · copo de '+(has?st.capacidade_ml:500)+' mL';
@@ -480,45 +492,52 @@ function render(){
   /* etapa */
   var e=s.modo_remoto?s.etapa:'manual',info=ETAPAS[e]||[e,''];
   var tit=info[0],desc=info[1];
-  if(e==='enchendo')tit='Enchendo até '+alvo+'%';
-  if(e==='ajustando'){desc=s.reuso?'A água passou do alvo: válvula de reuso aberta até voltar a '+alvo+'%.':s.bomba?'O nível baixou demais: bomba ligada até '+alvo+'%.':'Conferindo o nível.'}
-  if(e==='estavel'){tit='No alvo · produto em '+fmtS(Math.max(0,s.produto_em_s));desc='Se o nível continuar entre '+pc(alvo-tol)+'% e '+pc(alvo+tol)+'%, a válvula do produto abre.'}
+  var r1=Math.round(s.alvo_r1||0),mix=s.mistura_r1;
+  if(e==='enchendo_r1'){tit='Reservatório 1 até '+r1+'%';desc=s.bomba1?'Reservatório 1 ligado. Depois o reservatório 2 completa até '+alvo+'%.':'Esperando a água assentar para conferir.'}
+  if(e==='enchendo_r2'){tit='Reservatório 2 até '+alvo+'%';desc=s.bomba2?'Reservatório 2 ligado, completando a mistura.':'Esperando a água assentar para conferir.'}
+  if(e==='estavel'){tit='Misturando · produto em '+fmtS(Math.max(0,s.produto_em_s));desc='Mistura R1 '+mix+'% / R2 '+(100-mix)+'%. Depois a bomba do produto leva a mistura.'}
   $('etT').textContent=tit;$('etD').textContent=desc;
   $('modeTag').textContent=s.modo_remoto?'Remoto':'Manual';$('modeTag').className='mode'+(s.modo_remoto?'':' man');
-  var ordem=['enchendo','ajustando','estavel','produto'],idx=ordem.indexOf(e);
+  var ordem=['enchendo_r1','enchendo_r2','estavel','produto'],idx=ordem.indexOf(e);
   document.querySelectorAll('#flow span').forEach(function(sp,i){sp.className=i===idx?'cur':(idx>i?'done':'')});
   $('flow').style.opacity=s.modo_remoto&&e!=='comando'?1:.4;
   $('ciclosT').textContent='Ciclos concluídos: '+s.ciclos+' · reabastecer automático '+(s.reabastecer?'ligado':'desligado');
   /* tanque */
   $('water').style.height=(ok?s.nivel_pct:0)+'%';
-  $('water').style.background=ex?'var(--danger)':passou?'var(--pre)':e==='produto'?'var(--prod)':'var(--water)';
+  var corte=s.nivel_pct>0?Math.max(0,Math.min(100,100*r1/s.nivel_pct)):100,doisTons=s.modo_remoto&&(e==='enchendo_r2'||e==='estavel');
+  $('water').style.background=ex?'var(--danger)':passou?'var(--pre)':e==='produto'?'var(--prod)':doisTons?'linear-gradient(to top,var(--water) 0 '+corte+'%,var(--r2) '+corte+'% 100%)':'var(--water)';
+  var exP=s.extravasao_pct||80;$('ovz').style.height=(100-exP)+'%';$('mex').style.bottom=exP+'%';$('mexT').textContent=exP+'%';
+  $('mr1').hidden=!(s.modo_remoto&&(e==='enchendo_r1'||e==='enchendo_r2')&&mix>0&&mix<100);$('mr1').style.bottom=r1+'%';$('mr1T').textContent='R1 '+r1+'%';
   $('pct').textContent=ok?s.nivel_pct+'%':'–';$('ml').textContent=ok?s.volume_ml+' mL':'Sem leitura do sensor';
   $('malvo').style.bottom=alvo+'%';$('malvoT').textContent='Alvo '+alvo+'%';
   $('band').style.bottom=(alvo-tol)+'%';$('band').style.height=(2*tol)+'%';
   [20,40,60].forEach(function(f){$('m'+f).style.visibility=(Math.abs(alvo-f)<10)?'hidden':''});
-  setOut('oB',s.bomba,s.bomba?'Ligada':'Desligada');setOut('oR',s.reuso,s.reuso?'Aberta':'Fechada');
-  setOut('oP',s.produto,s.produto?'Aberta':'Fechada');setOut('oZ',s.buzzer,s.buzzer_teste?'Teste':s.buzzer?'Tocando':s.buzzer_desligado?'Desligado':s.buzzer_mudo?'Mudo':'Quieto');
+  setOut('oB',s.bomba1,s.bomba1?'Ligada':'Desligada');setOut('oR',s.bomba2,s.bomba2?'Ligada':'Desligada');
+  setOut('oP',s.produto,s.produto?'Ligada':'Desligada');setOut('oZ',s.buzzer,s.buzzer_teste?'Teste':s.buzzer?'Tocando':s.buzzer_desligado?'Desligado':s.buzzer_mudo?'Mudo':'Quieto');
   $('vol').textContent=ok?s.volume_ml+' mL':'–';$('alvoV').textContent=alvo+'% · '+ml(s,alvo)+' mL';
-  $('dist').textContent=ok?s.distancia_cm.toFixed(1)+' cm':'–';$('cap').textContent=s.capacidade_ml+' mL';
+  $('dist').textContent=ok?s.distancia_cm.toFixed(1)+' cm':'–';$('cap').textContent=mix+'% · '+(100-mix)+'%';
   /* controle */
   $('remoto').checked=s.modo_remoto;$('reab').checked=s.reabastecer;$('bzOn').checked=!s.buzzer_desligado;$('hornOn').checked=somOn;
-  var a=eAlvo==null?alvo:eAlvo,t=eTem==null?s.tempo_s:eTem;
+  var a=eAlvo==null?alvo:eAlvo,t=eTem==null?s.tempo_s:eTem,m=eMix==null?mix:eMix;
   $('alvoE').textContent=a+'%';$('alvoML').textContent='= '+ml(s,a)+' mL';$('temE').textContent=fmtS(t);
-  var mudou=a!==alvo||t!==s.tempo_s;$('cfgSend').hidden=!mudou;$('cfgSend').disabled=busy;$('cfgSend').textContent=busy?'Enviando…':'Enviar ao ESP32';
+  var m1=Math.round(ml(s,a)*m/100);$('mixE').textContent=m+'%';$('mixML').textContent='R1 '+m+'% ('+m1+' mL) · R2 '+(100-m)+'% ('+(ml(s,a)-m1)+' mL) · com o copo vazio';
+  $('mixB1').style.width=m+'%';$('mixB2').style.width=(100-m)+'%';
+  var mudou=a!==alvo||t!==s.tempo_s||m!==mix;$('cfgSend').hidden=!mudou;$('cfgSend').disabled=busy;$('cfgSend').textContent=busy?'Enviando…':'Enviar ao ESP32';
   var rodando=!!s.ciclo_rodando,livre=s.modo_remoto&&!rodando;
   $('cStart').disabled=busy||rodando;$('cStop').disabled=busy||!s.modo_remoto||e==='aguardando';
   var dica=!s.modo_remoto?'Manual · use os interruptores (ou ligue o Modo remoto)':rodando?'Ciclo rodando · pare o ciclo para usar':'Remoto · toque para ';
-  setAct('bB',s.bomba,'LIGADA','DESLIGADA',s.bomba_bloqueada?'Bloqueada até o nível ficar em 80% por 5 s':livre?dica+(s.bomba?'desligar':'ligar')+' · relé IN3':dica);
-  setAct('bR',s.reuso,'ABERTA','FECHADA',livre?dica+(s.reuso?'fechar':'abrir')+' · relé IN1':dica);
-  setAct('bP',s.produto,'ABERTA','FECHADA',livre?dica+(s.produto?'fechar':'abrir')+' · relé IN2':dica);
+  var bloq='Bloqueada até o nível ficar em 75% por 5 s (esvazie pelo produto)';
+  setAct('bB',s.bomba1,'LIGADA','DESLIGADA',s.bomba_bloqueada?bloq:livre?dica+(s.bomba1?'desligar':'ligar')+' · D33':dica);
+  setAct('bR',s.bomba2,'LIGADA','DESLIGADA',s.bomba_bloqueada?bloq:livre?dica+(s.bomba2?'desligar':'ligar')+' · D27':dica);
+  setAct('bP',s.produto,'LIGADA','DESLIGADA',livre?dica+(s.produto?'desligar':'ligar')+' · D32':dica);
   ['bB','bR','bP'].forEach(function(id){$(id).disabled=busy||!livre});
   $('bZ').classList.toggle('lit',s.buzzer);$('bZt').textContent=s.buzzer_teste?'TESTE':s.buzzer?'TOCANDO':s.buzzer_mudo?'MUDO':'QUIETO';
   $('bZs').textContent=s.buzzer_teste?'Tocando o teste · toque para parar':s.buzzer?'Alarme tocando · toque para silenciar':rodando?'Teste só com o ciclo parado':'Toque para testar (toca até 10 s)';
   $('bZ').disabled=busy||(rodando&&!(s.buzzer&&!s.buzzer_teste));
-  if(ex&&!s.bomba){$('bBs').textContent='Bloqueada pela extravasão'}
+  if(ex){$('bBs').textContent=$('bRs').textContent='Bloqueada pela extravasão'}
   /* previsão */
   var k=predict(),mlmin=k==null?0:Math.abs(k*60*s.capacidade_ml/100);
-  if(e==='estavel'){$('pv1').textContent='Produto sai em '+fmtS(Math.max(0,s.produto_em_s));$('pv2').textContent='Se o nível continuar no alvo.'}
+  if(e==='estavel'){$('pv1').textContent='Produto sai em '+fmtS(Math.max(0,s.produto_em_s));$('pv2').textContent='A mistura está descansando no copo.'}
   else if(k==null||Math.abs(k)<0.01){$('pv1').textContent=k==null?'Calculando tendência…':'Nível estável';$('pv2').textContent=k==null?'São necessários alguns segundos de leitura.':'Sem variação no último minuto.'}
   else if(k>0){$('pv1').textContent=s.nivel_pct<alvo?'Chega no alvo em ~'+dur((alvo-s.nivel_pct)/k):'Subindo';$('pv2').textContent='Enchendo a '+mlmin.toFixed(0)+' mL/min.'}
   else{var fim=e==='produto'?(s.vazio_pct||5):(s.nivel_pct>alvo?alvo:0);
@@ -545,9 +564,9 @@ function drawChart(){
   var W=r.width,H=r.height,L=34,R=14,T=8,B=22,w=W-L-R,h=H-T-B,now=Date.now(),span=300000;
   var y=function(v){return T+h*(1-v/100)},x=function(t){return L+w*(1-(now-t)/span)};
   g.clearRect(0,0,W,H);g.font='11px system-ui,sans-serif';
-  g.fillStyle='rgba(214,69,69,.08)';g.fillRect(L,y(100),w,y(85)-y(100));
+  var EX=st&&st.extravasao_pct||80;g.fillStyle='rgba(214,69,69,.08)';g.fillRect(L,y(100),w,y(EX)-y(100));
   if(st){var tl=st.tolerancia||2.5;g.fillStyle='rgba(46,158,106,.14)';g.fillRect(L,y(st.alvo_pct+tl),w,y(st.alvo_pct-tl)-y(st.alvo_pct+tl));}
-  [0,20,40,60,85,100].forEach(function(v){g.strokeStyle=v===85?'#D64545':'#DCE4EB';g.setLineDash(v===85?[4,4]:[]);
+  [0,20,40,60,EX,100].forEach(function(v){g.strokeStyle=v===EX?'#D64545':'#DCE4EB';g.setLineDash(v===EX?[4,4]:[]);
     g.beginPath();g.moveTo(L,y(v));g.lineTo(W-R,y(v));g.stroke();g.fillStyle='#5D6B78';g.textAlign='right';g.fillText(v+'%',L-6,y(v)+4)});
   if(st){g.strokeStyle='#2E9E6A';g.setLineDash([]);g.lineWidth=1.5;g.beginPath();g.moveTo(L,y(st.alvo_pct));g.lineTo(W-R,y(st.alvo_pct));g.stroke();g.lineWidth=1;}
   g.setLineDash([]);['-5 min','-4','-3','-2','-1','agora'].forEach(function(l,i){g.textAlign=i===5?'right':i===0?'left':'center';g.fillText(l,i===0?L-4:i===5?W-2:L+w*i/5,H-6)});
@@ -560,7 +579,7 @@ function drawChart(){
   g.lineTo(x(p[n-1].t),y(0));g.lineTo(x(p[0].t),y(0));g.closePath();g.fillStyle='rgba(42,143,214,.15)';g.fill();
   g.beginPath();p.forEach(function(q,i){i?g.lineTo(x(q.t),y(q.v)):g.moveTo(x(q.t),y(q.v))});
   g.strokeStyle='#1769A8';g.lineWidth=2;g.stroke();
-  var e=p[n-1];g.fillStyle=e.v>=85?'#D64545':'#1769A8';g.beginPath();g.arc(x(e.t),y(e.v),4,0,7);g.fill();
+  var e=p[n-1];g.fillStyle=e.v>=EX?'#D64545':'#1769A8';g.beginPath();g.arc(x(e.t),y(e.v),4,0,7);g.fill();
 }
 $('hclr').onclick=function(){hist=[];save('aq_hist',hist);drawChart()};
 window.addEventListener('resize',function(){if(tab==='historico')drawChart()});
